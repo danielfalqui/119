@@ -34,18 +34,8 @@ def get_stem_words(words, ignore_words):
         if word not in ignore_words:
             w = stemmer.stem(word.lower())
             stem_words.append(w)
+    return stem_words    
 
-        # escreva o algoritmo de stemização:
-        '''
-        Verifique se a palavra não faz parte da palavra de parada:
-        1) converta-a para minúsculo
-        2) stemize a palavra
-        3) anexe-a na lista stem_words
-        4) retorne a lista
-        ''' 
-        # Adicione o código aqui #        
-
-    return stem_words
 
 
 '''
@@ -69,28 +59,28 @@ def create_bot_corpus(words, classes, pattern_word_tags_list, ignore_words):
         for pattern in intent['patterns']:  
 
             # tokenize o padrão          
-            pattern_words = nltk.word_tokenize(pattern)
-
+            pattern_word = nltk.word_tokenize(pattern)
+            words.extend(pattern_word)
             # adicione as palavras tokenizadas à lista words   
-            words.append(pattern_words)     
+            pattern_word_tags_list.append((pattern_word, intent['tag']))    
                           
-            # adicione a 'lista de palavras tokenizadas' junto com a 'tag' à lista pattern_word_tags_list
-            
-            
+        # adicione a 'lista de palavras tokenizadas' junto com a 'tag' à lista pattern_word_tags_list
+
         # Adicione todas as tags à lista classes
         if intent['tag'] not in classes:
             classes.append(intent['tag'])
 
             
-    stem_words = get_stem_words(words, ignore_words) 
-
+    
     # Remova palavras duplicadas de stem_words
-
+    stem_words = get_stem_words(words, ignore_words) 
     # ordene a lista de palavras-tronco e a lista classes
-
+    stem_words = sorted(list(set(stem_words)))
     
     # imprima a stem_words
     print('lista de palavras stemizadas: ' , stem_words)
+
+    classes = sorted(list(set(classes)))
 
     return stem_words, classes, pattern_word_tags_list
 
@@ -118,7 +108,11 @@ def bag_of_words_encoding(stem_words, pattern_word_tags_list):
         2) verifique se essa palavra está em stemmed_pattern_word
         3) anexe 1 no BOW; caso contrário, anexe 0
         '''
-        
+        for word in stem_words:
+            if word in stemmed_pattern_word:
+                bag_of_words.append(1)
+            else:
+                bag_of_words.append(0)
         bag.append(bag_of_words)
     
     return np.array(bag)
@@ -150,7 +144,8 @@ def preprocess_train_data():
     stem_words, tag_classes, word_tags_list = create_bot_corpus(words, classes, pattern_word_tags_list, ignore_words)
     
     # Converta as palavras-tronco e a lista classes para o formato de arquivo Python pickle
-    
+    pickle.dump(stem_words, open("words.pkl","wb"))
+    pickle.dump(tag_classes, open("classes.pkl","wb"))
 
     train_x = bag_of_words_encoding(stem_words, word_tags_list)
     train_y = class_label_encoding(tag_classes, word_tags_list)
